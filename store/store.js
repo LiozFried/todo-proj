@@ -15,3 +15,6 @@ export function appReducer(state = initialState, cmd = {}) {
             return { ...state, todos: cmd.todos }
     }
 }
+
+export const store = createStore(appReducer)
+window.gStore = store
