@@ -1,11 +1,12 @@
 const { createStore } = Redux
 
 export const SET_TODOS = 'SET_TODOS'
+export const SET_FILTER = 'SET_FILTER'
 
 const initialState = {
     todos: [],
     // isLoading: false,
-    // currentFilterBy: null,
+    currentFilterBy: null,
     // loggedinUser: null,
 }
 
@@ -14,6 +15,8 @@ export function appReducer(state = initialState, cmd = {}) {
         case SET_TODOS:
             return { ...state, todos: cmd.todos }
 
+        case SET_FILTER:
+            return { ...state, currentFilterBy: cmd.filterBy }
         default:
             return state
     }
