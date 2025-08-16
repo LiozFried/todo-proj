@@ -25,9 +25,9 @@ export function TodoIndex() {
     useEffect(() => {
         if (filterBy) {
             setSearchParams(filterBy)
-            dispatch(loadTodos())
+            loadTodos()
         }
-    }, [filterBy, setSearchParams, dispatch])
+    }, [filterBy, setSearchParams])
 
     function onRemoveTodo(todoId) {
         todoService.remove(todoId)

@@ -8,5 +8,5 @@ export function loadTodos() {
 }
 
 export function setFilterBy(filterBy) {
-    store.dispatch({ type: SET_FILTER, filterBy })
+    return { type: SET_FILTER, filterBy }
 }
