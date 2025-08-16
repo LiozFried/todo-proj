@@ -4,35 +4,35 @@ import { DataTable } from "../cmps/data-table/DataTable.jsx"
 import { todoService } from "../services/todo.service.js"
 import { loadTodos, setFilterBy } from "../store/actions/todo.actions.js"
 import { showErrorMsg, showSuccessMsg } from "../services/event-bus.service.js"
-import { store } from "../store/store.js"
 
 const { useEffect } = React
-const { useSelector } = ReactRedux
+const { useSelector, useDispatch } = ReactRedux
 const { Link, useSearchParams } = ReactRouterDOM
 
 export function TodoIndex() {
 
     const todos = useSelector(state => state.todos)
     const filterBy = useSelector(state => state.filterBy)
+    const dispatch = useDispatch()
     // Special hook for accessing search-params:
     const [searchParams, setSearchParams] = useSearchParams()
 
     useEffect(() => {
         const defaultFilter = todoService.getFilterFromSearchParams(searchParams)
-        setFilterBy(defaultFilter)
-    }, [])
+        dispatch(setFilterBy(defaultFilter))
+    }, [dispatch, searchParams])
 
     useEffect(() => {
         if (filterBy) {
             setSearchParams(filterBy)
-            loadTodos()
+            dispatch(loadTodos())
         }
-    }, [filterBy, setSearchParams])
+    }, [filterBy, setSearchParams, dispatch])
 
     function onRemoveTodo(todoId) {
         todoService.remove(todoId)
             .then(() => {
-                loadTodos()
+                dispatch(loadTodos())
                 showSuccessMsg(`Todo removed`)
             })
             .catch(err => {
@@ -45,7 +45,7 @@ export function TodoIndex() {
         const todoToSave = { ...todo, isDone: !todo.isDone }
         todoService.save(todoToSave)
             .then((savedTodo) => {
-                loadTodos()
+                dispatch(loadTodos())
                 showSuccessMsg(`Todo is ${(savedTodo.isDone) ? 'done' : 'back on your list'}`)
             })
             .catch(err => {
@@ -57,7 +57,7 @@ export function TodoIndex() {
     if (!todos || !filterBy) return <div>Loading...</div>
     return (
         <section className="todo-index">
-            <TodoFilter onSetFilterBy={setFilterBy} />
+            <TodoFilter />
             <div>
                 <Link to="/todo/edit" className="btn" >Add Todo</Link>
             </div>
