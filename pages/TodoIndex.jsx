@@ -2,35 +2,37 @@ import { TodoFilter } from "../cmps/TodoFilter.jsx"
 import { TodoList } from "../cmps/TodoList.jsx"
 import { DataTable } from "../cmps/data-table/DataTable.jsx"
 import { todoService } from "../services/todo.service.js"
-import { loadTodos } from "../store/actions/todo.actions.js"
+import { loadTodos, setFilterBy } from "../store/actions/todo.actions.js"
 import { showErrorMsg, showSuccessMsg } from "../services/event-bus.service.js"
+import { store } from "../store/store.js"
 
-const { useState, useEffect } = React
-const { useSelector, useDispatch } = ReactRedux
+const { useEffect } = React
+const { useSelector } = ReactRedux
 const { Link, useSearchParams } = ReactRouterDOM
 
 export function TodoIndex() {
 
-    // const [todos, setTodos] = useState(null)
     const todos = useSelector(state => state.todos)
-    const dispatch = useDispatch()
-
+    const filterBy = useSelector(state => state.filterBy)
     // Special hook for accessing search-params:
     const [searchParams, setSearchParams] = useSearchParams()
 
-    const defaultFilter = todoService.getFilterFromSearchParams(searchParams)
-
-    const [filterBy, setFilterBy] = useState(defaultFilter)
+    useEffect(() => {
+        const defaultFilter = todoService.getFilterFromSearchParams(searchParams)
+        setFilterBy(defaultFilter)
+    }, [])
 
     useEffect(() => {
-        setSearchParams(filterBy)
-        loadTodos(filterBy)
-    }, [filterBy])
+        if (filterBy) {
+            setSearchParams(filterBy)
+            loadTodos()
+        }
+    }, [filterBy, setSearchParams])
 
     function onRemoveTodo(todoId) {
         todoService.remove(todoId)
             .then(() => {
-                setTodos(prevTodos => prevTodos.filter(todo => todo._id !== todoId))
+                loadTodos()
                 showSuccessMsg(`Todo removed`)
             })
             .catch(err => {
@@ -43,7 +45,7 @@ export function TodoIndex() {
         const todoToSave = { ...todo, isDone: !todo.isDone }
         todoService.save(todoToSave)
             .then((savedTodo) => {
-                setTodos(prevTodos => prevTodos.map(currTodo => (currTodo._id !== todo._id) ? currTodo : { ...savedTodo }))
+                loadTodos()
                 showSuccessMsg(`Todo is ${(savedTodo.isDone) ? 'done' : 'back on your list'}`)
             })
             .catch(err => {
@@ -52,10 +54,10 @@ export function TodoIndex() {
             })
     }
 
-    if (!todos) return <div>Loading...</div>
+    if (!todos || !filterBy) return <div>Loading...</div>
     return (
         <section className="todo-index">
-            <TodoFilter filterBy={filterBy} onSetFilterBy={setFilterBy} />
+            <TodoFilter onSetFilterBy={setFilterBy} />
             <div>
                 <Link to="/todo/edit" className="btn" >Add Todo</Link>
             </div>
