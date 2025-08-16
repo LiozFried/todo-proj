@@ -1,8 +1,11 @@
-const { useSelector } = ReactRedux
+import { setFilterBy } from "../store/actions/todo.actions.js"
 
-export function TodoFilter({ onSetFilterBy }) {
+const { useSelector, useDispatch } = ReactRedux
+
+export function TodoFilter() {
 
     const filterBy = useSelector(state => state.filterBy)
+    const dispatch = useDispatch()
 
     function handleChange({ target }) {
         const field = target.name
@@ -22,7 +25,7 @@ export function TodoFilter({ onSetFilterBy }) {
         }
 
         const newFilter = { ...filterBy, [field]: value }
-        onSetFilterBy(newFilter)
+        dispatch(setFilterBy(newFilter))
     }
 
     // // Optional support for LAZY Filtering with a button
