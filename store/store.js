@@ -6,7 +6,7 @@ export const SET_FILTER = 'SET_FILTER'
 const initialState = {
     todos: [],
     // isLoading: false,
-    currentFilterBy: null,
+    filterBy: null,
     // loggedinUser: null,
 }
 
@@ -16,7 +16,7 @@ export function appReducer(state = initialState, cmd = {}) {
             return { ...state, todos: cmd.todos }
 
         case SET_FILTER:
-            return { ...state, currentFilterBy: cmd.filterBy }
+            return { ...state, filterBy: cmd.filterBy }
         default:
             return state
     }
