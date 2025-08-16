@@ -1,13 +1,8 @@
-const { useState, useEffect } = React
+const { useSelector } = ReactRedux
 
-export function TodoFilter({ filterBy, onSetFilterBy }) {
+export function TodoFilter({ onSetFilterBy }) {
 
-    const [filterByToEdit, setFilterByToEdit] = useState({...filterBy})
-
-    useEffect(() => {
-        // Notify parent
-        onSetFilterBy(filterByToEdit)
-    }, [filterByToEdit])
+    const filterBy = useSelector(state => state.filterBy)
 
     function handleChange({ target }) {
         const field = target.name
@@ -26,20 +21,23 @@ export function TodoFilter({ filterBy, onSetFilterBy }) {
             default: break
         }
 
-        setFilterByToEdit(prevFilter => ({ ...prevFilter, [field]: value }))
+        const newFilter = { ...filterBy, [field]: value }
+        onSetFilterBy(newFilter)
     }
 
-    // Optional support for LAZY Filtering with a button
-    function onSubmitFilter(ev) {
-        ev.preventDefault()
-        onSetFilterBy(filterByToEdit)
-    }
+    // // Optional support for LAZY Filtering with a button
+    // function onSubmitFilter(ev) {
+    //     ev.preventDefault()
+    //     onSetFilterBy(filterByToEdit)
+    // }
 
-    const { txt, importance } = filterByToEdit
+    const { txt, importance } = filterBy
     return (
         <section className="todo-filter">
             <h2>Filter Todos</h2>
-            <form onSubmit={onSubmitFilter}>
+            <form
+            // onSubmit={onSubmitFilter}
+            >
                 <input value={txt} onChange={handleChange}
                     type="search" placeholder="By Txt" id="txt" name="txt"
                 />
@@ -47,8 +45,7 @@ export function TodoFilter({ filterBy, onSetFilterBy }) {
                 <input value={importance} onChange={handleChange}
                     type="number" placeholder="By Importance" id="importance" name="importance"
                 />
-
-                <button hidden>Set Filter</button>
+                {/* <button hidden>Set Filter</button> */}
             </form>
         </section>
     )
