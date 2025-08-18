@@ -1,5 +1,7 @@
 const { createStore } = Redux
 
+import { userService } from '../services/user.service.js'
+
 export const SET_TODOS = 'SET_TODOS'
 export const SET_FILTER = 'SET_FILTER'
 export const SET_IS_LOADING = 'SET_IS_LOADING'
@@ -32,7 +34,7 @@ export function appReducer(state = initialState, cmd = {}) {
 
         case SET_MAX_PAGE:
             return { ...state, maxPage: cmd.maxPage }
-
+            
         default:
             return state
     }
