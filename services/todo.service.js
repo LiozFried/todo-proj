@@ -1,7 +1,9 @@
 import { utilService } from './util.service.js'
 import { storageService } from './async-storage.service.js'
+import { userService } from './user.service.js'
 
 const TODO_KEY = 'todoDB'
+const PAGE_SIZE = 4
 _createTodos()
 
 export const todoService = {
@@ -13,7 +15,9 @@ export const todoService = {
     getDefaultFilter,
     getFilterFromSearchParams,
     getImportanceStats,
+    getDoneTodosPercent,
 }
+
 // For Debug (easy access from console):
 window.cs = todoService
 
@@ -29,7 +33,24 @@ function query(filterBy = {}) {
                 todos = todos.filter(todo => todo.importance >= filterBy.importance)
             }
 
-            return todos
+            if (filterBy.isDone !== 'all') {
+                todos = todos.filter((todo) => filterBy.isDone === 'done' ? todo.isDone : !todo.isDone)
+            }
+
+            if (filterBy.sort) {
+                if (filterBy.sort === 'txt') {
+                    todos = todos.sort((a, b) => a.txt.localeCompare(b.txt))
+                } else if (filterBy.sort === 'createdAt') {
+                    todos = todos.sort((a, b) => a.createdAt - b.createdAt)
+                }
+            }
+
+            const filteredTodosLength = todos.length
+            if (filterBy.pageIdx !== undefined) {
+                const startIdx = filterBy.pageIdx * PAGE_SIZE
+                todos = todos.slice(startIdx, startIdx + PAGE_SIZE)
+            }
+            return includeDataFromServer({ todos, filteredTodosLength })
         })
 }
 
@@ -39,22 +60,27 @@ function get(todoId) {
             todo = _setNextPrevTodoId(todo)
             return todo
         })
+        .catch((err) => {
+            console.error('Cannot get todo:', err)
+            throw err
+        })
 }
 
 function remove(todoId) {
     return storageService.remove(TODO_KEY, todoId)
+        .then(() => includeDataFromServer())
+        .catch((err) => {
+            console.error('Cannot remove todo:', err)
+            throw err
+        })
 }
 
 function save(todo) {
-    if (todo._id) {
-        // TODO - updatable fields
-        todo.updatedAt = Date.now()
-        return storageService.put(TODO_KEY, todo)
-    } else {
-        todo.createdAt = todo.updatedAt = Date.now()
+    if (!userService.getLoggedinUser())
+        return Promise.reject('User is not logged in')
 
-        return storageService.post(TODO_KEY, todo)
-    }
+    return (todo._id ? _edit(todo) : _add(todo))
+        .then((savedTodo) => includeDataFromServer({ savedTodo }))
 }
 
 function getEmptyTodo(txt = '', importance = 5) {
@@ -62,7 +88,7 @@ function getEmptyTodo(txt = '', importance = 5) {
 }
 
 function getDefaultFilter() {
-    return { txt: '', importance: 0 }
+    return { txt: '', importance: 0, isDone: 'all', pageIdx: 0, sort: '' }
 }
 
 function getFilterFromSearchParams(searchParams) {
@@ -74,6 +100,40 @@ function getFilterFromSearchParams(searchParams) {
     return filterBy
 }
 
+function includeDataFromServer(data = {}) {
+    const filteredTodosLength = data.filteredTodosLength
+    return Promise.all([
+        getDoneTodosPercent(),
+        getMaxPage(filteredTodosLength),
+    ]).then(([doneTodosPercent, maxPage]) => {
+        return { maxPage, doneTodosPercent, ...data }
+    })
+}
+
+function getDoneTodosPercent() {
+    return storageService
+        .query(TODO_KEY)
+        .then((todos) => {
+            const doneTodosCount = todos.reduce((acc, todo) => acc + todo.isDone, 0)
+            return (doneTodosCount / todos.length) * 100 || 0
+        })
+        .catch((err) => {
+            console.error('Cannot get done todos percent:', err)
+            throw err
+        })
+}
+
+function getMaxPage(filteredTodosLength) {
+    if (filteredTodosLength)
+        return Promise.resolve(Math.ceil(filteredTodosLength / PAGE_SIZE))
+    return storageService
+        .query(TODO_KEY)
+        .then((todos) => Math.ceil(todos.length / PAGE_SIZE))
+        .catch((err) => {
+            console.error('Cannot get max page:', err)
+            throw err
+        })
+}
 
 function getImportanceStats() {
     return storageService.query(TODO_KEY)
@@ -83,6 +143,27 @@ function getImportanceStats() {
             return data
         })
 
+}
+
+function _add(todo) {
+    todo = { ...todo }
+    todo.createdAt = todo.updatedAt = Date.now()
+    todo.color = utilService.getRandomColor()
+    return storageService.post(TODO_KEY, todo)
+        .catch((err) => {
+            console.error('Cannot add todo:', err)
+            throw err
+        })
+}
+
+function _edit(todo) {
+    todo = { ...todo }
+    todo.updatedAt = Date.now()
+    return storageService.put(TODO_KEY, todo)
+        .catch((err) => {
+            console.error('Cannot update todo:', err)
+            throw err
+        })
 }
 
 function _createTodos() {
@@ -102,18 +183,20 @@ function _createTodo(txt, importance) {
     const todo = getEmptyTodo(txt, importance)
     todo._id = utilService.makeId()
     todo.createdAt = todo.updatedAt = Date.now() - utilService.getRandomIntInclusive(0, 1000 * 60 * 60 * 24)
+    todo.color = utilService.getRandomColor()
     return todo
 }
 
 function _setNextPrevTodoId(todo) {
-    return storageService.query(TODO_KEY).then((todos) => {
-        const todoIdx = todos.findIndex((currTodo) => currTodo._id === todo._id)
-        const nextTodo = todos[todoIdx + 1] ? todos[todoIdx + 1] : todos[0]
-        const prevTodo = todos[todoIdx - 1] ? todos[todoIdx - 1] : todos[todos.length - 1]
-        todo.nextTodoId = nextTodo._id
-        todo.prevTodoId = prevTodo._id
-        return todo
-    })
+    return storageService.query(TODO_KEY)
+        .then((todos) => {
+            const todoIdx = todos.findIndex((currTodo) => currTodo._id === todo._id)
+            const nextTodo = todos[todoIdx + 1] ? todos[todoIdx + 1] : todos[0]
+            const prevTodo = todos[todoIdx - 1] ? todos[todoIdx - 1] : todos[todos.length - 1]
+            todo.nextTodoId = nextTodo._id
+            todo.prevTodoId = prevTodo._id
+            return todo
+        })
 }
 
 function _getTodoCountByImportanceMap(todos) {
