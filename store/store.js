@@ -8,6 +8,11 @@ export const SET_IS_LOADING = 'SET_IS_LOADING'
 export const SET_DONE_TODOS_PERCENT = 'SET_DONE_TODOS_PERCENT'
 export const SET_MAX_PAGE = 'SET_MAX_PAGE'
 export const ADD_TODO = 'ADD_TODO'
+export const UPDATE_TODO = 'UPDATE_TODO'
+export const REMOVE_TODO = 'REMOVE_TODO'
+
+export const SET_USER = 'SET_USER'
+export const SET_USER_BALANCE = 'SET_USER_BALANCE'
 
 const initialState = {
     todos: [],
@@ -15,7 +20,7 @@ const initialState = {
     filterBy: null,
     doneTodosPercent: 0,
     maxPage: 0,
-    // loggedinUser: null,
+    loggedinUser: userService.getLoggedinUser(),
 }
 
 export function appReducer(state = initialState, cmd = {}) {
@@ -26,6 +31,13 @@ export function appReducer(state = initialState, cmd = {}) {
         case ADD_TODO:
             return { ...state, todos: [cmd.todo, ...state.todos] }
 
+        case UPDATE_TODO:
+            return { ...state, todos: state.todos.map(todo => todo._id === cmd.todo._id ? cmd.todo : todo) }
+
+        case REMOVE_TODO:
+            return { ...state, todos: state.todos.filter(todo => todo._id !== cmd.todoId) }
+
+
         case SET_FILTER:
             return { ...state, filterBy: cmd.filterBy }
 
@@ -33,11 +45,19 @@ export function appReducer(state = initialState, cmd = {}) {
         case SET_IS_LOADING:
             return { ...state, isLoading: cmd.isLoading }
 
+
         case SET_DONE_TODOS_PERCENT:
             return { ...state, doneTodosPercent: cmd.doneTodosPercent }
 
         case SET_MAX_PAGE:
             return { ...state, maxPage: cmd.maxPage }
+
+
+        case SET_USER:
+            return { ...state, loggedinUser: cmd.loggedinUser }
+
+        case SET_USER_BALANCE:
+            return { ...state, loggedinUser: { ...state.loggedinUser, balance: cmd.balance } }
 
         default:
             return state
