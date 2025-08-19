@@ -5,7 +5,7 @@ import { todoService } from "../services/todo.service.js"
 import { loadTodos, setFilterBy, removeTodo, saveTodo } from "../store/actions/todo.actions.js"
 import { showErrorMsg, showSuccessMsg } from "../services/event-bus.service.js"
 import { changeBalance } from "../store/actions/user.action.js"
-
+import { utilService } from "../services/util.service.js"
 
 const { useEffect } = React
 const { useSelector, useDispatch } = ReactRedux
@@ -18,6 +18,8 @@ export function TodoIndex() {
     const dispatch = useDispatch()
     // Special hook for accessing search-params:
     const [searchParams, setSearchParams] = useSearchParams()
+    const isLoading = useSelector(state => state.isLoading)
+    const maxPage = useSelector(state => state.maxPage)
 
     useEffect(() => {
         const defaultFilter = todoService.getFilterFromSearchParams(searchParams)
@@ -32,10 +34,12 @@ export function TodoIndex() {
     }, [filterBy, setSearchParams])
 
     function onRemoveTodo(todoId) {
-        todoService.remove(todoId)
+        const ans = confirm('Do you want to delete this todo?')
+        if (!ans) return
+
+        removeTodo(todoId)
             .then(() => {
-                dispatch(loadTodos())
-                showSuccessMsg(`Todo removed`)
+                showSuccessMsg(`Removed todo with ${todoId} id successfully`)
             })
             .catch(err => {
                 console.log('err:', err)
@@ -45,14 +49,16 @@ export function TodoIndex() {
 
     function onToggleTodo(todo) {
         const todoToSave = { ...todo, isDone: !todo.isDone }
-        todoService.save(todoToSave)
-            .then((savedTodo) => {
-                dispatch(loadTodos())
-                showSuccessMsg(`Todo is ${(savedTodo.isDone) ? 'done' : 'back on your list'}`)
+        saveTodo(todoToSave)
+            .then(() => {
+               showSuccessMsg(`Updated ${todoToSave.txt} successfully`)
+                if (todoToSave.isDone) {
+                    return changeBalance(10)
+                }
             })
             .catch(err => {
                 console.log('err:', err)
-                showErrorMsg('Cannot toggle todo ' + todoId)
+                showErrorMsg('Cannot toggle todo')
             })
     }
 
@@ -65,11 +71,11 @@ export function TodoIndex() {
             </div>
             <h2>Todos List</h2>
             <TodoList todos={todos} onRemoveTodo={onRemoveTodo} onToggleTodo={onToggleTodo} />
-            <hr />
+            {/* <hr />
             <h2>Todos Table</h2>
             <div style={{ width: '60%', margin: 'auto' }}>
                 <DataTable todos={todos} onRemoveTodo={onRemoveTodo} />
-            </div>
+            </div> */}
         </section>
     )
 }
