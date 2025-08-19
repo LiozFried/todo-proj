@@ -100,7 +100,7 @@ function addActivity(txt) {
     const loggedinUser = getLoggedinUser()
     if (!loggedinUser) return Promise.reject('No loggedin user')
 
-    return getByIdgetById(loggedinUser._id)
+    return getById(loggedinUser._id)
         .then(user => {
             if (!user.activities) user.activities = []
             user.activities.unshift(activity)
