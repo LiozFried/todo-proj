@@ -1,5 +1,5 @@
 import { todoService } from '../../services/todo.service.js'
-import { store, SET_TODOS, SET_FILTER, SET_IS_LOADING, SET_DONE_TODOS_PERCENT, SET_MAX_PAGE } from '../store.js'
+import { store, SET_TODOS, SET_FILTER, SET_IS_LOADING, SET_DONE_TODOS_PERCENT, SET_MAX_PAGE, ADD_TODO, UPDATE_TODO, REMOVE_TODO } from '../store.js'
 
 export function loadTodos() {
     store.dispatch({ type: SET_IS_LOADING, isLoading: true })
