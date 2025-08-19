@@ -95,7 +95,12 @@ function getFilterFromSearchParams(searchParams) {
     const defaultFilter = getDefaultFilter()
     const filterBy = {}
     for (const field in defaultFilter) {
-        filterBy[field] = searchParams.get(field) || ''
+        // Convert 'importance' and 'pageIdx' to numbers
+        if (field === 'importance' || field === 'pageIdx') {
+            filterBy[field] = +searchParams.get(field) || defaultFilter[field]
+        } else {
+            filterBy[field] = searchParams.get(field) || defaultFilter[field]
+        }
     }
     return filterBy
 }

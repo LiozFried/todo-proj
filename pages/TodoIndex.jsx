@@ -2,8 +2,10 @@ import { TodoFilter } from "../cmps/TodoFilter.jsx"
 import { TodoList } from "../cmps/TodoList.jsx"
 import { DataTable } from "../cmps/data-table/DataTable.jsx"
 import { todoService } from "../services/todo.service.js"
-import { loadTodos, setFilterBy } from "../store/actions/todo.actions.js"
+import { loadTodos, setFilterBy, removeTodo, saveTodo } from "../store/actions/todo.actions.js"
 import { showErrorMsg, showSuccessMsg } from "../services/event-bus.service.js"
+import { changeBalance } from "../store/actions/user.action.js"
+
 
 const { useEffect } = React
 const { useSelector, useDispatch } = ReactRedux
